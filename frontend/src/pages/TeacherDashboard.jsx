@@ -6,19 +6,13 @@ import DashboardLayout from "../DashboardLayout";
 const TeacherDashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("attendance");
+  const [issues, setIssues] = useState([]);
 
-
-
-  // for attendence states
-
+  // Attendance states
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedCourseSummary, setSelectedCourseSummary] = useState("");
   const [courseSummary, setCourseSummary] = useState([]);
   const [overallSummary, setOverallSummary] = useState([]);
-
-  const [allStudentsSemester, setAllStudentsSemester] = useState("");
-  const [allStudents, setAllStudents] = useState([]);
-
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [students, setStudents] = useState([]);
@@ -26,37 +20,33 @@ const TeacherDashboard = () => {
   const [attendance, setAttendance] = useState({});
   const [message, setMessage] = useState("");
 
-  // for marks
+  // Marks states
   const [marksSemester, setMarksSemester] = useState(1);
   const [marksExamType, setMarksExamType] = useState("mid");
   const [marksByStudent, setMarksByStudent] = useState({});
 
-  //for courses
+  // Courses states
   const [courseName, setCourseName] = useState("");
   const [courseSemester, setCourseSemester] = useState(1);
 
-
-  // for enrollment states
+  // Enrollment states
   const [enrollments, setEnrollments] = useState([]);
   const [enrollmentsCourseId, setEnrollmentsCourseId] = useState("");
   const [enrollmentsSemester, setEnrollmentsSemester] = useState("");
-
   const [enrollCourseId, setEnrollCourseId] = useState("");
-  const [enrollSemester, setEnrollSemester] = useState(1);
+  const [filterSemester, setFilterSemester] = useState("");
   const [availableStudents, setAvailableStudents] = useState([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
-  const [filterSemester, setFilterSemester] = useState("");
-  const [filterCourseId, setFilterCourseId] = useState("");
-  const [showOnlyNotEnrolled, setShowOnlyNotEnrolled] = useState(true);
   const [newStudentEmail, setNewStudentEmail] = useState("");
 
-
-  // Resolve issue form state
+  // Issue states
   const [issueId, setIssueId] = useState("");
   const [issueStatus, setIssueStatus] = useState("Approved");
   const [issueRemark, setIssueRemark] = useState("");
 
-  // Fetch teacher’s courses
+  const [savingAttendance, setSavingAttendance] = useState(false);
+
+  // Fetch courses
   useEffect(() => {
     if (user?.id) {
       apiTeacher
@@ -65,8 +55,15 @@ const TeacherDashboard = () => {
         .catch((err) => console.error(err));
     }
   }, [user]);
-
-  // Fetch students when a course and attendance Semester are selected 
+  
+  // Fetch issues
+  useEffect(() => {
+    if (activeTab === "issues" && user?.id) {
+      fetchIssues();
+    }
+  }, [activeTab, user?.id]);
+  
+  // Fetch students
   useEffect(() => {
     if (selectedCourse && attendanceSemester) {
       apiTeacher
@@ -88,7 +85,7 @@ const TeacherDashboard = () => {
     }
   }, [selectedCourse, attendanceSemester]);
 
-  // Load existing attendance when all filters selected 
+  // Load attendance
   useEffect(() => {
     const shouldLoad = activeTab === "attendance" && selectedCourse && selectedDate && attendanceSemester;
     if (!shouldLoad) return;
@@ -96,7 +93,6 @@ const TeacherDashboard = () => {
       try {
         const existing = await apiTeacher.getAttendance({ course_id: Number(selectedCourse), date: selectedDate, semester: attendanceSemester });
         if (Array.isArray(existing) && existing.length > 0) {
-          // Map to attendance state for those returned; keep others default present
           setAttendance((prev) => {
             const next = { ...prev };
             existing.forEach((row) => {
@@ -112,7 +108,7 @@ const TeacherDashboard = () => {
     })();
   }, [activeTab, selectedCourse, selectedDate, attendanceSemester]);
 
-  // Reload existing marks when exam type changes
+  // Load marks
   useEffect(() => {
     if (students.length > 0 && selectedCourse && marksSemester) {
       (async () => {
@@ -125,11 +121,23 @@ const TeacherDashboard = () => {
     }
   }, [marksExamType]);
 
+  // Fetch issues
+  const fetchIssues = async () => {
+    try {
+      const data = await apiTeacher.getIssues(user.id);
+      setIssues(data);
+    } catch (err) {
+      console.error(err);
+      setMessage(err.message);
+    }
+  };
+
+  // Set status
   const setStatus = (studentId, status) => {
     setAttendance((prev) => ({ ...prev, [studentId]: status }));
   };
 
-  const [savingAttendance, setSavingAttendance] = useState(false);
+  // Submit attendance
   const handleSubmitAttendance = async () => {
     if (!selectedCourse || !selectedDate || !attendanceSemester) {
       setMessage("Please select course, date, and semester.");
@@ -142,33 +150,6 @@ const TeacherDashboard = () => {
       date: selectedDate,
       status: attendance[s.id],
     }));
-
-
-    const handleLoadAllStudents = async () => {
-      if (!allStudentsSemester) {
-        alert("Enter a semester to load students");
-        return;
-      }
-      try {
-        const data = await apiTeacher.listStudents({
-          semester: Number(allStudentsSemester)
-        });
-        // Transform to include courses enrolled
-        const studentsWithCourses = await Promise.all(
-          data.map(async (stu) => {
-            const enrollments = await apiTeacher.listCourseEnrollmentsByStudent(stu.id);
-            return {
-              ...stu,
-              courses: enrollments.map((e) => e.course_name || e.name), // adjust according to API
-            };
-          })
-        );
-        setAllStudents(studentsWithCourses);
-      } catch (err) {
-        console.error(err);
-        setAllStudents([]);
-      }
-    };
 
     try {
       setSavingAttendance(true);
@@ -185,6 +166,7 @@ const TeacherDashboard = () => {
     }
   };
 
+  // Create course
   const handleCreateCourse = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -200,10 +182,12 @@ const TeacherDashboard = () => {
     }
   };
 
+  // Set marks
   const setMarks = (studentId, value) => {
     setMarksByStudent((prev) => ({ ...prev, [studentId]: value }));
   };
 
+  // Submit marks
   const handleSubmitMarks = async () => {
     if (!selectedCourse) {
       setMessage("Please select a course.");
@@ -227,6 +211,7 @@ const TeacherDashboard = () => {
     }
   };
 
+  // Load enrollments
   const handleLoadEnrollments = async () => {
     setMessage("");
     if (!enrollmentsCourseId || !enrollmentsSemester) {
@@ -241,6 +226,7 @@ const TeacherDashboard = () => {
     }
   };
 
+  // Enroll students
   const handleEnrollStudents = async (e) => {
     if (e) e.preventDefault();
     setMessage("");
@@ -254,11 +240,9 @@ const TeacherDashboard = () => {
         setMessage("Please select a course");
         return;
       }
-      console.log("Enrolling students:", { course_id: Number(enrollCourseId), student_ids: ids });
       await apiTeacher.enrollStudents({ course_id: Number(enrollCourseId), student_ids: ids });
       setMessage("Students enrolled successfully!");
       setSelectedStudentIds([]);
-      // If the currently selected course matches, refresh its student list
       if (selectedCourse && Number(enrollCourseId) === Number(selectedCourse)) {
         const data = await apiTeacher.getStudentsInCourse(selectedCourse);
         setStudents(data);
@@ -273,6 +257,8 @@ const TeacherDashboard = () => {
       setMessage(err.message || "Failed to enroll students");
     }
   };
+
+  // Load available students
   const handleLoadAvailableStudents = async () => {
     setMessage("");
 
@@ -280,18 +266,14 @@ const TeacherDashboard = () => {
       const params = {};
 
       if (filterSemester && !isNaN(filterSemester)) {
-        params.semester = Number(filterSemester);  // ensure number
+        params.semester = Number(filterSemester);
       }
 
-      if (filterCourseId) {
-        params.course_id = Number(filterCourseId);
-      } else if (enrollCourseId) {
+      if (enrollCourseId) {
         params.course_id = Number(enrollCourseId);
       }
 
-      if (showOnlyNotEnrolled) {
-        params.exclude_enrolled = true;
-      }
+      params.exclude_enrolled = true;
 
       const data = await apiTeacher.listStudents(params);
       setAvailableStudents(data);
@@ -304,14 +286,14 @@ const TeacherDashboard = () => {
     }
   };
 
-
-
+  // Toggle student selection
   const toggleStudentSelect = (id) => {
     setSelectedStudentIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
 
+  // Resolve issue
   const handleResolveIssue = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -326,21 +308,7 @@ const TeacherDashboard = () => {
     }
   };
 
-  const tabButton = (key, label) => (
-    <button
-      type="button"
-      onClick={() => setActiveTab(key)}
-      className={`px-4 py-2 border-b-2 ${activeTab === key ? "border-blue-600 text-blue-600" : "border-transparent"}`}
-    >
-      {label}
-    </button>
-  );
-
-  const btnBase = "px-3 py-1 rounded border";
-  const btnActivePresent = "bg-green-600 text-white border-green-600";
-  const btnInactivePresent = "bg-white text-green-700 border-green-600";
-  const btnActiveAbsent = "bg-red-600 text-white border-red-600";
-  const btnInactiveAbsent = "bg-white text-red-700 border-red-600";
+  // Load students for marks
   const handleLoadStudents = async () => {
     setMessage("");
     if (!selectedCourse || !marksSemester) {
@@ -362,7 +330,6 @@ const TeacherDashboard = () => {
         return;
       }
 
-      // Load existing marks for these students
       await handleLoadExistingMarks(data);
       setMessage("Loaded students and existing marks (if any).");
     } catch (err) {
@@ -371,6 +338,7 @@ const TeacherDashboard = () => {
     }
   };
 
+  // Load existing marks
   const handleLoadExistingMarks = async (studentsData) => {
     if (!selectedCourse || !marksSemester) return;
 
@@ -398,6 +366,23 @@ const TeacherDashboard = () => {
     }
   };
 
+  // Tab button
+  const tabButton = (key, label) => (
+    <button
+      type="button"
+      onClick={() => setActiveTab(key)}
+      className={`px-4 py-2 border-b-2 ${activeTab === key ? "border-blue-600 text-blue-600" : "border-transparent"}`}
+    >
+      {label}
+    </button>
+  );
+
+  // Button styles
+  const btnBase = "px-3 py-1 rounded border";
+  const btnActivePresent = "bg-green-600 text-white border-green-600";
+  const btnInactivePresent = "bg-white text-green-700 border-green-600";
+  const btnActiveAbsent = "bg-red-600 text-white border-red-600";
+  const btnInactiveAbsent = "bg-white text-red-700 border-red-600";
 
   return (
     <DashboardLayout>
@@ -406,14 +391,17 @@ const TeacherDashboard = () => {
         {/* Tabs */}
         <div className="flex gap-4 border-b mb-6">
           {tabButton("attendance", "Attendance")}
-          {tabButton("courses", "Courses")}
           {tabButton("marks", "Marks")}
+          {tabButton("courses", "Courses")}
           {tabButton("enrollments", "Enrollments")}
+          {tabButton("issues", "Issues")}
         </div>
+
+        {/* Attendance Tab */}
         {activeTab === "attendance" && (
           <div>
             <h2 className="text-xl font-bold mb-4">Attendance Management</h2>
-            {/*  Record Attendance Section */}
+            {/* Record Attendance */}
             <div className="p-4 rounded mb-6" style={{ backgroundColor: "#F7F7F5" }}>
               <h3 className="font-semibold mb-2">Mark Attendance</h3>
               <p className="text-sm text-gray-600 mb-2">
@@ -455,10 +443,9 @@ const TeacherDashboard = () => {
                 />
               </div>
 
-              {/* Students list with Present/Absent toggles */}
+              {/* Students list */}
               {students.length > 0 && (
                 <div className="border rounded mb-4 overflow-x-auto">
-                  {/* Bulk controls and counts */}
                   <div className="flex items-center justify-between p-2 bg-gray-50 border-b">
                     <div className="flex gap-2">
                       <button
@@ -537,8 +524,7 @@ const TeacherDashboard = () => {
               </button>
             </div>
 
-            {/* ====== 2️⃣ Course-wise Attendance Summary ====== */}
-            {/* ====== 2️⃣ Course-wise Attendance Summary ====== */}
+            {/* Course Summary */}
             <div className="p-4 rounded mb-6" style={{ backgroundColor: "#F7F7F5" }}>
               <h3 className="font-semibold mb-2">📘 Course-wise Attendance Summary</h3>
 
@@ -607,11 +593,11 @@ const TeacherDashboard = () => {
                 </table>
               )}
             </div>
-            {/* ====== 3️⃣ Overall Attendance Summary ====== */}
+
+            {/* Overall Summary */}
             <div className="p-4 rounded" style={{ backgroundColor: "#F7F7F5" }}>
               <h3 className="font-semibold mb-2">📊 Overall Attendance (All Courses)</h3>
 
-              {/* Semester quick-pick buttons */}
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-sm text-gray-700">Semester:</span>
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
@@ -663,7 +649,6 @@ const TeacherDashboard = () => {
                 Load Overall Summary
               </button>
 
-              {/* ====== Summary Table ====== */}
               {overallSummary.length > 0 && (
                 <table className="w-full border-collapse text-sm">
                   <thead className="bg-gray-100">
@@ -688,7 +673,6 @@ const TeacherDashboard = () => {
                     ))}
                   </tbody>
 
-                  {/* ====== Totals (footer) ====== */}
                   <tfoot>
                     {(() => {
                       const totalPresent = overallSummary.reduce((acc, r) => acc + (r.present || 0), 0);
@@ -708,11 +692,10 @@ const TeacherDashboard = () => {
                 </table>
               )}
             </div>
-
           </div>
         )}
 
-
+        {/* Courses Tab */}
         {activeTab === "courses" && (
           <div>
             {/* Create Course */}
@@ -740,70 +723,66 @@ const TeacherDashboard = () => {
                 <button type="submit" className="px-3 py-2 bg-green-600 text-white rounded">Create</button>
               </form>
             </div>
-            <div>
 
-
-              {/* List all courses */}
-              <div className="p-4 rounded mb-6" style={{ backgroundColor: "#F7F7F5" }}>
-                <h3 className="font-semibold mb-2">Your Courses</h3>
-                {courses.length > 0 ? (
-                  <table className="w-full border-collapse">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="border p-2 text-left">ID</th>
-                        <th className="border p-2 text-left">Name</th>
-                        <th className="border p-2 text-left">Semester</th>
-                        <th className="border p-2 text-left">Actions</th>
+            {/* Course List */}
+            <div className="p-4 rounded mb-6" style={{ backgroundColor: "#F7F7F5" }}>
+              <h3 className="font-semibold mb-2">Your Courses</h3>
+              {courses.length > 0 ? (
+                <table className="w-full border-collapse">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="border p-2 text-left">ID</th>
+                      <th className="border p-2 text-left">Name</th>
+                      <th className="border p-2 text-left">Semester</th>
+                      <th className="border p-2 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {courses.map((c) => (
+                      <tr key={c.id} className="hover:bg-gray-50">
+                        <td className="border p-2">{c.id}</td>
+                        <td className="border p-2">{c.name}</td>
+                        <td className="border p-2">{c.semester}</td>
+                        <td className="border p-2">
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Are you sure you want to delete course "${c.name}"? This will unenroll all students.`)) return;
+                              try {
+                                const res = await apiTeacher.deleteCourse(c.id);
+                                alert(res.message);
+                                const updated = await apiTeacher.getCourses(user.id);
+                                setCourses(updated);
+                              } catch (err) {
+                                console.error(err);
+                                alert(err.message || "Failed to delete course");
+                              }
+                            }}
+                            className="px-3 py-1 bg-red-600 text-white rounded"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await apiTeacher.enrollAllSemesterStudents(c.id);
+                                alert(res.message + (res.enrolled !== undefined ? ` (Enrolled: ${res.enrolled})` : ""));
+                              } catch (err) {
+                                console.error(err);
+                                alert(err.message || "Failed to enroll all semester students");
+                              }
+                            }}
+                            className="ml-2 px-3 py-1 bg-blue-600 text-white rounded"
+                          >
+                            Enroll All (Semester)
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {courses.map((c) => (
-                        <tr key={c.id} className="hover:bg-gray-50">
-                          <td className="border p-2">{c.id}</td>
-                          <td className="border p-2">{c.name}</td>
-                          <td className="border p-2">{c.semester}</td>
-                          <td className="border p-2">
-                            <button
-                              onClick={async () => {
-                                if (!confirm(`Are you sure you want to delete course "${c.name}"? This will unenroll all students.`)) return;
-                                try {
-                                  const res = await apiTeacher.deleteCourse(c.id);
-                                  alert(res.message);
-                                  // Refresh courses list
-                                  const updated = await apiTeacher.getCourses(user.id);
-                                  setCourses(updated);
-                                } catch (err) {
-                                  console.error(err);
-                                  alert(err.message || "Failed to delete course");
-                                }
-                              }}
-                              className="px-3 py-1 bg-red-600 text-white rounded"
-                            >
-                              Delete
-                            </button>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  const res = await apiTeacher.enrollAllSemesterStudents(c.id);
-                                  alert(res.message + (res.enrolled !== undefined ? ` (Enrolled: ${res.enrolled})` : ""));
-                                } catch (err) {
-                                  console.error(err);
-                                  alert(err.message || "Failed to enroll all semester students");
-                                }
-                              }}
-                              className="ml-2 px-3 py-1 bg-blue-600 text-white rounded"
-                            >
-                              Enroll All (Semester)
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p className="text-gray-500">No Courses Found.</p>
-                )}
-              </div>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-gray-500">No Courses Found.</p>
+              )}
             </div>
 
             {/* Enroll Students */}
@@ -842,16 +821,7 @@ const TeacherDashboard = () => {
                     placeholder="Enter semester"
                   />
                 </div>
-                <div>
-                  <label className="block mb-1">New Student Email:</label>
-                  <input
-                    type="email"
-                    value={newStudentEmail}
-                    onChange={(e) => setNewStudentEmail(e.target.value)}
-                    className="border p-2 rounded w-full"
-                    placeholder="email@example.com"
-                  />
-                </div>
+                
               </div>
 
               <div className="flex gap-2 mb-4">
@@ -871,7 +841,7 @@ const TeacherDashboard = () => {
                       return;
                     }
                     try {
-                      const name = newStudentEmail.split('@')[0]; // Use email prefix as name
+                      const name = newStudentEmail.split('@')[0];
                       await apiTeacher.createStudent({
                         name,
                         email: newStudentEmail,
@@ -902,7 +872,6 @@ const TeacherDashboard = () => {
                           onChange={() => toggleStudentSelect(s.id)}
                         />
                         <span className="flex-1">{s.name} - {s.email}</span>
-                        {s.enrolled && <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">Enrolled</span>}
                       </label>
                     ))}
                   </div>
@@ -917,43 +886,10 @@ const TeacherDashboard = () => {
                 </div>
               )}
             </div>
-
-
-            {/* Resolve Issue */}
-            <div className=" p-4 rounded" style={{ backgroundColor: "#F7F7F5" }}>
-              <h3 className="font-semibold mb-2">Resolve Attendance Issue</h3>
-              <form onSubmit={handleResolveIssue} className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <input
-                  type="number"
-                  placeholder="Issue ID"
-                  value={issueId}
-                  onChange={(e) => setIssueId(e.target.value)}
-                  required
-                  className="border p-2 rounded"
-                />
-                <select
-                  value={issueStatus}
-                  onChange={(e) => setIssueStatus(e.target.value)}
-                  className="border p-2 rounded"
-                >
-                  <option value="Approved" className="text-black">Approve</option>
-                  <option value="Rejected" className="text-black">Reject</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Remark"
-                  value={issueRemark}
-                  onChange={(e) => setIssueRemark(e.target.value)}
-                  className="border p-2 rounded"
-                />
-                <div>
-                  <button type="submit" className="px-3 py-2 bg-purple-600 text-white rounded">Submit</button>
-                </div>
-              </form>
-            </div>
           </div>
         )}
 
+        {/* Marks Tab */}
         {activeTab === "marks" && (
           <div>
             {/* Course selector */}
@@ -1061,14 +997,13 @@ const TeacherDashboard = () => {
           </div>
         )}
 
-
+        {/* Enrollments Tab */}
         {activeTab === "enrollments" && (
           <div>
             <div className="mb-6  p-4 rounded">
               <h3 className="font-semibold mb-2" >Get Student Records</h3>
 
               <div className=" rounded p-3" style={{ backgroundColor: "#F7F7F5" }}>
-                {/* Filters */}
                 <div className="flex flex-wrap gap-2 items-end mb-3">
                   <div>
                     <label className="mr-2">Course:</label>
@@ -1114,14 +1049,12 @@ const TeacherDashboard = () => {
 
                 {/* Table */}
                 {enrollments.length > 0 ? (
-                  <table className="w-full border-collapse">
+                  <table className="w-full border-collapse ">
                     <thead className="bg-gray-100">
                       <tr>
                         <th className="border p-2 text-left">ID</th>
                         <th className="border p-2 text-left">Name</th>
                         <th className="border p-2 text-left">Email</th>
-                        <th className="border p-2 text-left">Course</th>
-                        <th className="border p-2 text-left">Semester</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1130,8 +1063,6 @@ const TeacherDashboard = () => {
                           <td className="border p-2">{s.id}</td>
                           <td className="border p-2">{s.name}</td>
                           <td className="border p-2">{s.email}</td>
-                          <td className="border p-2">{s.course_name}</td>
-                          <td className="border p-2">{s.semester}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1140,6 +1071,135 @@ const TeacherDashboard = () => {
                   <p className="text-gray-500">No students found for this course & semester.</p>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Issues Tab */}
+        {activeTab === "issues" && (
+          <div>
+            <div className="p-4 rounded" style={{ backgroundColor: "#F7F7F5" }}>
+              <h3 className="font-semibold mb-2">Student Raised Issues</h3>
+              
+              <div className="mb-4">
+                <button 
+                  onClick={fetchIssues} 
+                  className="px-4 py-2 bg-blue-600 text-white rounded"
+                >
+                  Refresh Issues
+                </button>
+              </div>
+              
+              {issues.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="border p-2 text-left">ID</th>
+                        <th className="border p-2 text-left">Student Name</th>
+                        <th className="border p-2 text-left">Student Email</th>
+                        <th className="border p-2 text-left">Course</th>
+                        <th className="border p-2 text-left">Date</th>
+                        <th className="border p-2 text-left">Reason</th>
+                        <th className="border p-2 text-left">Status</th>
+                        <th className="border p-2 text-left">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {issues.map((issue) => (
+                        <tr key={issue.id} className="hover:bg-gray-50">
+                          <td className="border p-2">{issue.id}</td>
+                          <td className="border p-2">{issue.student_name || issue.student?.name || issue.student_id}</td>
+                          <td className="border p-2">{issue.student_email || issue.student?.email || "-"}</td>
+                          <td className="border p-2">{issue.course_name || issue.course?.name || issue.course_id}</td>
+                          <td className="border p-2">{new Date(issue.created_at).toLocaleDateString()}</td>
+                          <td className="border p-2">{issue.remark}</td>
+                          <td className="border p-2">
+                            <span 
+                              className={`px-2 py-1 rounded text-xs font-semibold ${
+                                issue.status === "Approved" 
+                                  ? "bg-green-100 text-green-800" 
+                                  : issue.status === "Rejected"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                              }`}
+                            >
+                              {issue.status}
+                            </span>
+                          </td>
+                          <td className="border p-2">
+                            {issue.status === "Pending" && (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => {
+                                    setIssueId(issue.id);
+                                    setIssueStatus("Approved");
+                                    setIssueRemark("");
+                                  }}
+                                  className="px-2 py-1 bg-green-600 text-white text-xs rounded"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setIssueId(issue.id);
+                                    setIssueStatus("Rejected");
+                                    setIssueRemark("");
+                                  }}
+                                  className="px-2 py-1 bg-red-600 text-white text-xs rounded"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-gray-500">No issues to display.</p>
+              )}
+              
+              {/* Resolve Issue Form */}
+              {issueId && (
+                <div className="mt-6 p-4 border rounded bg-white">
+                  <h4 className="font-semibold mb-2">
+                    {issueStatus === "Approved" ? "Approve" : "Reject"} Issue #{issueId}
+                  </h4>
+                  <form onSubmit={handleResolveIssue} className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Remark (Optional)
+                      </label>
+                      <textarea
+                        value={issueRemark}
+                        onChange={(e) => setIssueRemark(e.target.value)}
+                        className="border p-2 rounded w-full h-24"
+                        placeholder="Add a message for the student"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        className={`px-4 py-2 text-white rounded ${
+                          issueStatus === "Approved" ? "bg-green-600" : "bg-red-600"
+                        }`}
+                      >
+                        {issueStatus === "Approved" ? "Approve" : "Reject"} Issue
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIssueId("")}
+                        className="px-4 py-2 bg-gray-300 text-gray-800 rounded"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
             </div>
           </div>
         )}

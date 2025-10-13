@@ -13,7 +13,7 @@ const Navbar = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  // not null and undefine user?
+  // Dashboard path
   const dashboardPath =
     user?.role === "admin"
       ? "/admin-dashboard"
@@ -32,7 +32,7 @@ const Navbar = () => {
             {/* Brand */}
             <div className="flex items-center gap-3">
               <Link to="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center font-bold">U</div>
+                <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center font-bold">A</div>
                 <div className="leading-tight">
                   <div className="font-semibold text-sm sm:text-base">{brand.title}</div>
                   <div className="text-[10px] sm:text-xs text-white/80">{brand.subtitle}</div>
@@ -40,7 +40,7 @@ const Navbar = () => {
               </Link>
             </div>
 
-            {/* Navigation Links */}
+            {/* Navigation */}
             <div className="flex items-center gap-2">
               <Link
                 to="/"
@@ -58,7 +58,7 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Profile / Auth Buttons */}
+            {/* Auth section */}
             <div className="flex items-center gap-3">
               {!user ? (
                 <>
@@ -77,6 +77,7 @@ const Navbar = () => {
                 </>
               ) : (
                 <div className="flex items-center gap-3">
+                  {/* User info */}
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center uppercase font-semibold">
                       {user?.name?.[0] || user?.email?.[0] || "U"}
@@ -86,6 +87,7 @@ const Navbar = () => {
                       <div className="text-[10px] text-white/80">{user?.role || "user"}</div>
                     </div>
                   </div>
+                  {/* Logout */}
                   <button
                     onClick={logout}
                     className="px-3 py-2 rounded bg-rose-500 hover:bg-rose-600 font-semibold"

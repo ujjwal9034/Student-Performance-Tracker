@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { ThemeProvider } from '@mui/material/styles';
-import { Button, Container, Typography, Box, CssBaseline } from '@mui/material'
+import { Button } from '@mui/material'
 import DashboardLayout from "../DashboardLayout.jsx"
+
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -16,10 +16,10 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      // call login function from AuthContext
+      // Login
       const userData = await login(email.trim(), password);
 
-      // redirect based on role
+      // Redirect
       if (userData.role === "admin") navigate("/admin-dashboard");
       else if (userData.role === "teacher") navigate("/teacher-dashboard");
       else navigate("/student-dashboard");

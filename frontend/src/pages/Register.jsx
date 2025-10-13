@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import DashboardLayout from "../DashboardLayout";
+
 const Register = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -9,7 +10,7 @@ const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student"); // default role
+  const [role, setRole] = useState("student");
   const [semester, setSemester] = useState(1);
   const [message, setMessage] = useState("");
 
@@ -17,6 +18,7 @@ const Register = () => {
     e.preventDefault();
 
     try {
+      // Register
       const response = await fetch("http://localhost:8000/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -28,14 +30,13 @@ const Register = () => {
         throw new Error(errorData.detail || "Registration failed");
       }
 
-
       const data = await response.json();
       setMessage("Registration successful! Logging you in...");
 
-      // automatically log in the user
+      // Auto login
       const userData = await login(email, password);
 
-      // Redirect based on role
+      // Redirect
       if (userData.role === "admin") navigate("/admin-dashboard");
       else if (userData.role === "teacher") navigate("/teacher-dashboard");
       else navigate("/student-dashboard");

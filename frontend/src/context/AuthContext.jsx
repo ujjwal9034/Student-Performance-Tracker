@@ -6,17 +6,16 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  // Load user from localStorage 
+  // Load user
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  //  receives email, password, calls backend
+  // Login
   const login = async (email, password) => {
     const data = await apiAuth.login({ email, password });
 
-    // { message, user_id, role }
     const userData = {
       id: data.user_id,
       email: email,
@@ -29,6 +28,7 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
+  // Logout
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
