@@ -11,9 +11,9 @@ import models, database, auth
 
 db = next(database.get_db())
 
-EMAIL    = os.getenv("SUPER_ADMIN_EMAIL", "admin@example.com")
+EMAIL    = os.getenv("SUPER_ADMIN_EMAIL", "ujjwalchauhan671@gmail.com")
 PASSWORD = os.getenv("SUPER_ADMIN_PASSWORD", "admin123")
-NAME     = os.getenv("SUPER_ADMIN_NAME", "Admin User")
+NAME     = os.getenv("SUPER_ADMIN_NAME", "Ujjwal Chauhan")
 
 existing = db.query(models.User).filter(models.User.email == EMAIL).first()
 if existing:

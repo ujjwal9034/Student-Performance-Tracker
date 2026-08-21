@@ -9,7 +9,7 @@ const brand = {
   subtitle: "Student Performance",
 };
 
-const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || "support@example.com";
+const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || "ujjwalchauhan671@gmail.com";
 
 const Navbar = () => {
   const { user, logout, updateUser } = useAuth();
