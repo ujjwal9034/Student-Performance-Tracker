@@ -104,7 +104,13 @@ Follow these steps to run both the backend and frontend servers locally on your 
 
 ## ☁️ Deployment Guide
 
-### 📦 Database & Backend on Render (Free Tier)
+### 📦 Database & Backend on Render (One-Click Blueprint Deploy)
+
+You can deploy the backend web service directly in one click using this button:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ujjwal9034/Student_Performance_Tracker)
+
+Alternatively, to configure it manually:
 1.  Sign in to [Render](https://render.com/).
 2.  Create a **New Web Service** and link it to your GitHub repository.
 3.  Set the following configuration:
