@@ -13,6 +13,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 import DashboardLayout from "./DashboardLayout.jsx"
 import "./index.css"
+import ServerConnectionBanner from "./components/ServerConnectionBanner";
+
 
 
 function App() {
@@ -61,6 +63,7 @@ function App() {
         />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <ServerConnectionBanner />
     </Router>
   );
 }

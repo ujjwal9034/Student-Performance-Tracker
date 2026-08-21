@@ -42,6 +42,7 @@ origins = [
     "http://127.0.0.1:5174",
     "http://localhost:5175",
     "http://localhost:5176",
+    "https://student-performance-tracker-v2.vercel.app",
 ]
 frontend_url = os.getenv("FRONTEND_URL")
 if frontend_url:
@@ -55,6 +56,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Health Check Root Endpoint
+@app.get("/")
+def health_check():
+    return {"status": "healthy", "message": "Student Performance Tracker API is awake"}
 
 # Routes
 app.include_router(auth_routes.router)
