@@ -26,7 +26,7 @@ def seed_database():
     print("[INFO] Connected to database.")
 
     # 1. Clean existing records (optional, but good for a fresh start)
-    print("[INFO] Cleaning existing records...")
+    db.query(models.QRSession).delete()
     db.query(models.AssignmentSubmission).delete()
     db.query(models.Assignment).delete()
     db.query(models.ClassSchedule).delete()
