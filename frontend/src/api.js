@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8000";
+export const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 // Request helper
 async function request(path, { method = "GET", body, headers = {} } = {}) {
@@ -28,10 +28,34 @@ async function request(path, { method = "GET", body, headers = {} } = {}) {
 export const apiAuth = {
   register: (payload) => request("/auth/register", { method: "POST", body: payload }),
   login: (payload) => request("/auth/login", { method: "POST", body: payload }),
+  changePassword: (payload) => request("/auth/change-password", { method: "POST", body: payload }),
+  forgotPassword: (payload) => request("/auth/forgot-password", { method: "POST", body: payload }),
+  resetPassword: (payload) => request("/auth/reset-password", { method: "POST", body: payload }),
 };
 
 //Admin APIs
 export const apiAdmin = {
+  // ── Admins ──────────────────────────────────────────────────────
+  getAdmins: () => request("/admin/admins"),
+  addAdmin: ({ name, email, password }) =>
+    request("/admin/admins", {
+      method: "POST",
+      body: { name, email, password, role: "admin" },
+    }),
+  promoteToAdmin: (userId) =>
+    request(`/admin/promote/${userId}`, { method: "POST" }),
+  deleteAdmin: (adminId, requesterId) =>
+    request(`/admin/admins/${adminId}?requester_id=${requesterId}`, { method: "DELETE" }),
+
+  // ── Approvals ───────────────────────────────────────────────────
+  getPendingUsers: () => request("/admin/pending"),
+  approveUser: (userId) => request(`/admin/approve/${userId}`, { method: "POST" }),
+  rejectUser: (userId) => request(`/admin/reject/${userId}`, { method: "POST" }),
+
+  // ── Teachers ─────────────────────────────────────────────────────
+  getTeachers: () => request("/admin/teachers"),
+  getStudents: () => request("/admin/students"),
+  getCourses: () => request("/admin/courses"),
   addTeacher: ({ name, email, password }) =>
     request("/admin/teachers", {
       method: "POST",
@@ -42,6 +66,19 @@ export const apiAdmin = {
       method: "POST",
       body: { name, email, password, role: "student", semester },
     }),
+  addCourse: ({ name, teacher_id, semester }) =>
+    request("/admin/courses", {
+      method: "POST",
+      body: { name, teacher_id, semester },
+    }),
+  deleteTeacher: (id) => request(`/admin/teachers/${id}`, { method: "DELETE" }),
+  deleteStudent: (id) => request(`/admin/students/${id}`, { method: "DELETE" }),
+  deleteCourse: (id) => request(`/admin/courses/${id}`, { method: "DELETE" }),
+
+  // Academic Calendar Events
+  getCalendarEvents: () => request("/admin/calendar-events"),
+  createCalendarEvent: (payload) => request("/admin/calendar-events", { method: "POST", body: payload }),
+  deleteCalendarEvent: (id) => request(`/admin/calendar-events/${id}`, { method: "DELETE" }),
 };
 // Teacher APIs
 export const apiTeacher = {
@@ -62,6 +99,8 @@ export const apiTeacher = {
     request(`/teacher/courses`, { method: "POST", body: { name, teacher_id, semester } }),
   resolveIssue: ({ issue_id, status, remark }) =>
     request(`/teacher/issues/${issue_id}/resolve`, { method: "POST", body: { status, remark } }),
+  deleteIssue: (issue_id) =>
+    request(`/teacher/issues/${issue_id}`, { method: "DELETE" }),
   enrollStudents: ({ course_id, student_ids }) =>
     request(`/teacher/courses/enroll`, { method: "POST", body: { course_id, student_ids } }),
   getIssues: (teacherId) => request(`/teacher/${teacherId}/issues`),
@@ -109,6 +148,50 @@ export const apiTeacher = {
   // Course management
   deleteCourse: (courseId) => request(`/teacher/courses/${courseId}`, { method: "DELETE" }),
   enrollAllSemesterStudents: (courseId) => request(`/teacher/courses/${courseId}/enroll/all-semester`, { method: "POST" }),
+
+  // Announcements
+  getAnnouncements: (teacherId) => request(`/teacher/${teacherId}/announcements`),
+  createAnnouncement: (payload) => request(`/teacher/announcements`, { method: "POST", body: payload }),
+  deleteAnnouncement: (announcementId) => request(`/teacher/announcements/${announcementId}`, { method: "DELETE" }),
+
+  // At-risk Alerts
+  getAtRiskStudents: ({ teacher_id, semester }) => request(`/teacher/${teacher_id}/at-risk/${semester}`),
+
+  // CSV Import
+  importGradesCSV: ({ course_id, semester, exam_type, file }) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return fetch(`${BASE_URL}/teacher/courses/${course_id}/grades/import?semester=${semester}&exam_type=${exam_type}`, {
+      method: "POST",
+      body: formData,
+    }).then(async (res) => {
+      let data = null;
+      try { data = await res.json(); } catch(e) {}
+      if (!res.ok) {
+        throw new Error(data?.detail || data?.message || "Failed to import CSV");
+      }
+      return data;
+    });
+  },
+
+  // Timetable
+  getTimetable: (teacherId) => request(`/teacher/${teacherId}/timetable`),
+  createTimetableSlot: (payload) => request("/teacher/timetable", { method: "POST", body: payload }),
+  deleteTimetableSlot: (id) => request(`/teacher/timetable/${id}`, { method: "DELETE" }),
+
+  // Assignments
+  getAssignments: (teacherId) => request(`/teacher/${teacherId}/assignments`),
+  createAssignment: (payload) => request("/teacher/assignments", { method: "POST", body: payload }),
+  getAssignmentSubmissions: (assignmentId) => request(`/teacher/assignments/${assignmentId}/submissions`),
+  gradeSubmission: ({ submission_id, marks_obtained, feedback }) =>
+    request(`/teacher/submissions/${submission_id}/grade`, { method: "POST", body: { marks_obtained, feedback } }),
+
+  // Exams
+  getExams: (teacherId) => request(`/teacher/${teacherId}/exams`),
+  createExam: (payload) => request("/teacher/exams", { method: "POST", body: payload }),
+  deleteExam: (id) => request(`/teacher/exams/${id}`, { method: "DELETE" }),
+  createQRSession: (payload) => request("/teacher/qr-session", { method: "POST", body: payload }),
+  getQRSessionScans: (sessionToken) => request(`/teacher/qr-session/${sessionToken}/scans`),
 };
 
 // Student APIs
@@ -136,6 +219,35 @@ export const apiStudent = {
     params.append("date_value", date);
     return request(`/student/${student_id}/attendance/by-course-date?${params.toString()}`);
   },
+  getAttendanceHeatmap: (studentId) => request(`/student/${studentId}/attendance/heatmap`),
+  getAnnouncements: (studentId) => request(`/student/${studentId}/announcements`),
+
+  // Timetable, Assignments, Exams
+  getTimetable: (studentId) => request(`/student/${studentId}/timetable`),
+  getAssignments: (studentId) => request(`/student/${studentId}/assignments`),
+  submitAssignment: (payload) => request("/student/submissions", { method: "POST", body: payload }),
+  getExams: (studentId) => request(`/student/${studentId}/exams`),
+  getProfile: (studentId) => request(`/student/${studentId}/profile`),
+  updateProfile: (studentId, payload) =>
+    request(`/student/${studentId}/profile`, { method: "POST", body: payload }),
+  uploadProfilePhoto: (studentId, file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return fetch(`${BASE_URL}/student/${studentId}/profile/upload-photo`, {
+      method: "POST",
+      body: formData,
+    }).then(async (res) => {
+      let data = null;
+      try { data = await res.json(); } catch(e) {}
+      if (!res.ok) {
+        throw new Error(data?.detail || data?.message || "Failed to upload photo");
+      }
+      return data;
+    });
+  },
+  getSmartInsights: (studentId) => request(`/student/${studentId}/smart-insights`),
+  claimQRAttendance: (studentId, token) =>
+    request(`/student/${studentId}/qr-attendance/claim`, { method: "POST", body: { session_token: token } })
 };
 
 export default {

@@ -17,9 +17,11 @@
     "@mui/material": "^7.3.2",
     "@tailwindcss/vite": "^4.1.13",
     "cors": "^2.8.5",
+    "html5-qrcode": "^2.3.8",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3",
+    "recharts": "^3.8.1",
     "tailwindcss": "^4.1.13"
   },
   "devDependencies": {

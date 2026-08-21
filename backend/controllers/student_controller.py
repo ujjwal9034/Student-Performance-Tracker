@@ -146,6 +146,38 @@ def raise_issue(issue: schemas.IssueCreate, db: Session):
     db.refresh(new_issue)
     return {"message": "Issue raised", "id": new_issue.id}
 
+def get_student_issues(student_id: int, db: Session):
+    """Return list of issues raised by the student."""
+    issues = (
+        db.query(
+            models.AttendanceIssue.id,
+            models.AttendanceIssue.course_id,
+            models.Course.name.label("course_name"),
+            models.AttendanceIssue.date,
+            models.AttendanceIssue.reason,
+            models.AttendanceIssue.status,
+            models.AttendanceIssue.remark,
+            models.AttendanceIssue.created_at
+        )
+        .join(models.Course, models.Course.id == models.AttendanceIssue.course_id, isouter=True)
+        .filter(models.AttendanceIssue.student_id == student_id)
+        .order_by(models.AttendanceIssue.created_at.desc())
+        .all()
+    )
+    return [
+        {
+            "id": i.id,
+            "course_id": i.course_id,
+            "course_name": i.course_name or "Unknown Course",
+            "date": i.date,
+            "reason": i.reason,
+            "status": i.status,
+            "remark": i.remark,
+            "created_at": i.created_at
+        }
+        for i in issues
+    ]
+
 
 # Attendance by month
 def get_attendance_by_course_and_month(student_id: int, course_id: int, year: int, month: int, db):
@@ -165,7 +197,7 @@ def get_attendance_by_course_and_month(student_id: int, course_id: int, year: in
     result = []
     for day in range(1, num_days + 1):
         current_date = date(year, month, day)
-        status = attendance_map.get(current_date, "Absent")
+        status = attendance_map.get(current_date, "Unrecorded")
         result.append({"date": current_date, "status": status})
     
     return result
@@ -184,3 +216,181 @@ def get_enrolled_courses(student_id: int, db: Session):
         {"id": c.id, "name": c.name, "teacher_id": c.teacher_id, "semester": e.semester}
         for (c, e) in rows
     ]
+
+def get_attendance_heatmap(student_id: int, db: Session):
+    """Return student's daily attendance records grouped by date for heatmap visualization."""
+    records = db.query(models.Attendance).filter(models.Attendance.student_id == student_id).all()
+    
+    by_date = {}
+    for r in records:
+        d_str = r.date.isoformat()
+        status = r.status.lower()
+        by_date.setdefault(d_str, []).append(status)
+        
+    heatmap = []
+    for d_str, statuses in by_date.items():
+        present_count = statuses.count("present")
+        absent_count = statuses.count("absent")
+        if present_count > 0 and absent_count == 0:
+            status = "present"
+        elif absent_count > 0 and present_count == 0:
+            status = "absent"
+        elif present_count > 0 and absent_count > 0:
+            status = "partial"
+        else:
+            status = "unrecorded"
+            
+        heatmap.append({
+            "date": d_str,
+            "status": status,
+            "present_count": present_count,
+            "absent_count": absent_count
+        })
+    return heatmap
+
+
+from datetime import datetime
+from fastapi import HTTPException
+
+def claim_qr_attendance(student_id: int, token: str, db: Session):
+    session = db.query(models.QRSession).filter(models.QRSession.session_token == token).first()
+    if not session:
+        raise HTTPException(status_code=400, detail="Invalid QR attendance code.")
+    
+    if not session.is_active:
+        raise HTTPException(status_code=400, detail="This QR session is no longer active.")
+        
+    if session.expires_at < datetime.now():
+        session.is_active = False
+        db.commit()
+        raise HTTPException(status_code=400, detail="This QR code has expired.")
+        
+    # Check if attendance already recorded
+    existing = db.query(models.Attendance).filter(
+        models.Attendance.student_id == student_id,
+        models.Attendance.course_id == session.course_id,
+        models.Attendance.date == session.date
+    ).first()
+    if existing:
+        return {"message": "Attendance already recorded for this course today.", "already_recorded": True}
+        
+    # Register attendance
+    att = models.Attendance(
+        student_id=student_id,
+        course_id=session.course_id,
+        date=session.date,
+        status="present"
+    )
+    db.add(att)
+    db.commit()
+    return {"message": "Attendance marked successfully as Present!", "already_recorded": False}
+
+
+def get_smart_insights(student_id: int, db: Session):
+    courses = get_enrolled_courses(student_id, db)
+    if not courses:
+        return {
+            "predicted_gpa": 0.0,
+            "expected_performance": [],
+            "study_recommendations": []
+        }
+        
+    att_summary = get_attendance_summary(student_id, db)
+    att_map = {c["course_id"]: c["percentage"] for c in att_summary["by_course"]}
+    
+    predicted_items = []
+    recommendations = []
+    total_predicted_score = 0.0
+    
+    topic_suggestions = {
+        "math": ["Linear Algebra", "Calculus Limits", "Eigenvalues", "Probability Matrices"],
+        "science": ["Thermodynamics", "Organic Synthesis", "Quantum Mechanics", "Wave Optics"],
+        "computer": ["Dynamic Programming", "Database Indexing", "Concurrency Control", "Graph Algorithms"],
+        "history": ["Industrial Revolution", "Renaissance Art", "French Revolution", "World War I"],
+        "english": ["Literary Criticism", "Shakespearean Prose", "Advanced Grammar Syntax", "Creative Essays"]
+    }
+    
+    for c in courses:
+        course_id = c["id"]
+        course_name = c["name"]
+        
+        grade_row = db.query(models.Grade).filter(
+            models.Grade.student_id == student_id,
+            models.Grade.course_id == course_id,
+            models.Grade.exam_type == "mid"
+        ).first()
+        
+        midterm_val = grade_row.marks if grade_row else None
+        attendance_rate = att_map.get(course_id, 100.0)
+        
+        if midterm_val is not None:
+            base_expected = float(midterm_val)
+        else:
+            base_expected = 75.0
+            
+        if attendance_rate >= 90.0:
+            att_factor = 5.0
+        elif attendance_rate >= 80.0:
+            att_factor = 2.0
+        elif attendance_rate < 75.0:
+            if attendance_rate < 60.0:
+                att_factor = -18.0
+            else:
+                att_factor = -8.0
+        else:
+            att_factor = 0.0
+            
+        expected_score = base_expected + att_factor
+        expected_score = max(0.0, min(100.0, expected_score))
+        
+        if expected_score < 60.0 or attendance_rate < 75.0:
+            risk = "High"
+        elif expected_score < 80.0:
+            risk = "Medium"
+        else:
+            risk = "Low"
+            
+        predicted_items.append({
+            "course_id": course_id,
+            "course_name": course_name,
+            "attendance_rate": round(attendance_rate, 2),
+            "mid_term_marks": midterm_val,
+            "expected_score": round(expected_score, 1),
+            "risk_level": risk
+        })
+        
+        total_predicted_score += expected_score
+        
+        c_lower = course_name.lower()
+        focus_list = ["Core Lectures", "Textbook Chapters 3-5", "Practice Assignments"]
+        for k, v in topic_suggestions.items():
+            if k in c_lower:
+                focus_list = v
+                break
+                
+        if risk == "High":
+            rec_text = f"High academic risk warning! Attendance is {round(attendance_rate, 1)}% (which is below the 75% threshold) or midterm performance was weak. You must review the upcoming modules immediately and seek help from the professor."
+            focus_areas = [focus_list[0], focus_list[1], "Office Hours Discussion"]
+        elif risk == "Medium":
+            rec_text = f"Moderate performance trajectory. Solving practice assignments and reviewing recent mock questions will help secure a top grade."
+            focus_areas = [focus_list[1], focus_list[2], "Peer Study Group"]
+        else:
+            rec_text = f"Excellent learning pace! To challenge yourself further, explore advanced readings and consider volunteering as a peer tutor."
+            focus_areas = [focus_list[2], focus_list[3] if len(focus_list) > 3 else "Extra Reading"]
+            
+        recommendations.append({
+            "course_name": course_name,
+            "recommendation": rec_text,
+            "risk_level": risk,
+            "focus_areas": focus_areas
+        })
+        
+    avg_expected = total_predicted_score / len(courses)
+    predicted_gpa = round(avg_expected / 10.0, 2)
+    predicted_gpa = max(0.0, min(10.0, predicted_gpa))
+    
+    return {
+        "predicted_gpa": predicted_gpa,
+        "expected_performance": predicted_items,
+        "study_recommendations": recommendations
+    }

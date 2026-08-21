@@ -53,6 +53,16 @@ def resolve_issue(issue_id: int, status: str, remark: str, db: Session):
     return {"message": f"Issue {status.lower()}"}
 
 
+# Delete issue
+def delete_issue(issue_id: int, db: Session):
+    issue = db.query(models.AttendanceIssue).filter(models.AttendanceIssue.id == issue_id).first()
+    if not issue:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    db.delete(issue)
+    db.commit()
+    return {"message": "Issue deleted"}
+
+
 # Upsert marks
 def upsert_bulk_marks(payload: schemas.BulkMarksPayload, db: Session):
     # Insert or update grades
@@ -88,19 +98,20 @@ def enroll_students(payload: schemas.EnrollStudentsPayload, db: Session):
     course = db.query(models.Course).filter(models.Course.id == payload.course_id).first()
     if not course:
         return {"error": "Course not found"}
+    enrolled_count = 0
+    skipped_count = 0
     for sid in payload.student_ids:
         # Check student semester match
         student = (
-            db.query(models.User, models.Student)
-            .join(models.Student, models.Student.user_id == models.User.id)
+            db.query(models.User)
             .filter(
                 models.User.id == sid,
                 models.User.role == models.RoleEnum.student,
-                models.Student.semester == course.semester,
             )
             .first()
         )
         if not student:
+            skipped_count += 1
             continue
         exists = (
             db.query(models.Enrollment)
@@ -119,8 +130,11 @@ def enroll_students(payload: schemas.EnrollStudentsPayload, db: Session):
                     semester=course.semester,
                 )
             )
+            enrolled_count += 1
+        else:
+            skipped_count += 1
     db.commit()
-    return {"message": "Students enrolled"}
+    return {"message": f"Successfully enrolled {enrolled_count} student(s). Skipped {skipped_count} (already enrolled or wrong semester)."}
 
 
 # Get all issues
@@ -327,7 +341,8 @@ def get_teacher_overall_attendance_summary(teacher_id: int, semester: int, db: S
 
 
 # Teacher detailed attendance
-def get_teacher_attendance_detailed(teacher_id: int, semester: int, db: Session, course_id: int | None = None):
+from typing import Optional
+def get_teacher_attendance_detailed(teacher_id: int, semester: int, db: Session, course_id: Optional[int] = None):
     """Return detailed per-student attendance with optional course filter."""
     # Teacher's courses
     course_query = db.query(models.Course.id, models.Course.name).filter(
@@ -408,3 +423,103 @@ def get_teacher_attendance_detailed(teacher_id: int, semester: int, db: Session,
         entry["overall"]["percentage"] = round((pre / tot * 100.0), 2) if tot else 0.0
 
     return list(result_map.values())
+
+def get_at_risk_students(teacher_id: int, semester: int, db: Session):
+    """Identify students with attendance < 75% or any grade < 40 in mid/end exams."""
+    attendance_summary = get_teacher_overall_attendance_summary(teacher_id, semester, db)
+    course_ids = [
+        c.id
+        for c in db.query(models.Course).filter(
+            models.Course.teacher_id == teacher_id,
+            models.Course.semester == semester,
+        ).all()
+    ]
+    if not course_ids:
+        return []
+    
+    student_ids = [s["student_id"] for s in attendance_summary]
+    if not student_ids:
+        return []
+
+    # Get grades < 40 for these students in these courses
+    low_grades = (
+        db.query(models.Grade)
+        .filter(
+            models.Grade.student_id.in_(student_ids),
+            models.Grade.course_id.in_(course_ids),
+            models.Grade.semester == semester,
+            models.Grade.marks < 40
+        )
+        .all()
+    )
+    
+    # Map low grades by student_id
+    low_grades_map = {}
+    for lg in low_grades:
+        low_grades_map.setdefault(lg.student_id, []).append({
+            "course_id": lg.course_id,
+            "exam_type": lg.exam_type,
+            "marks": lg.marks
+        })
+        
+    course_names_map = {c.id: c.name for c in db.query(models.Course).filter(models.Course.id.in_(course_ids)).all()}
+
+    at_risk = []
+    for s in attendance_summary:
+        sid = s["student_id"]
+        reasons = []
+        # If total is 0, let's not flag them for attendance, or maybe we should only if they actually have attendance records.
+        if s["total"] > 0 and s["percentage"] < 75.0:
+            reasons.append(f"Low attendance: {s['percentage']}% ({s['present']}/{s['total']})")
+        
+        student_low_grades = low_grades_map.get(sid, [])
+        for lg in student_low_grades:
+            course_name = course_names_map.get(lg["course_id"], "Unknown Course")
+            reasons.append(f"Low grade in {course_name} ({lg['exam_type']}): {lg['marks']}/100")
+            
+        if reasons:
+            at_risk.append({
+                "student_id": sid,
+                "name": s["name"],
+                "attendance_percentage": s["percentage"],
+                "reasons": reasons
+            })
+            
+    return at_risk
+
+
+import uuid
+from datetime import datetime, timedelta, date
+
+def create_qr_session(course_id: int, duration_minutes: int, db: Session):
+    token = uuid.uuid4().hex
+    expires_at = datetime.now() + timedelta(minutes=duration_minutes)
+    
+    session = models.QRSession(
+        course_id=course_id,
+        session_token=token,
+        date=date.today(),
+        expires_at=expires_at,
+        is_active=True
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return session
+
+def get_qr_session_scans(session_token: str, db: Session):
+    session = db.query(models.QRSession).filter(models.QRSession.session_token == session_token).first()
+    if not session:
+        return []
+        
+    scans = (
+        db.query(models.User.id, models.User.name, models.User.email)
+        .join(models.Attendance, models.Attendance.student_id == models.User.id)
+        .filter(
+            models.Attendance.course_id == session.course_id,
+            models.Attendance.date == session.date,
+            models.Attendance.status == "present"
+        )
+        .all()
+    )
+    return [{"id": s.id, "name": s.name, "email": s.email} for s in scans]

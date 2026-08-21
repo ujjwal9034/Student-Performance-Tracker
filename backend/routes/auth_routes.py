@@ -15,3 +15,15 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
 @router.post("/login")
 def login(user: schemas.UserLogin, db: Session = Depends(database.get_db)):
     return auth_controller.login_user(user, db)
+
+@router.post("/change-password")
+def change_password(payload: schemas.ChangePassword, db: Session = Depends(database.get_db)):
+    return auth_controller.change_password(payload, db)
+
+@router.post("/forgot-password")
+def forgot_password(payload: schemas.ForgotPassword, db: Session = Depends(database.get_db)):
+    return auth_controller.forgot_password(payload, db)
+
+@router.post("/reset-password")
+def reset_password(payload: schemas.ResetPassword, db: Session = Depends(database.get_db)):
+    return auth_controller.reset_password(payload, db)

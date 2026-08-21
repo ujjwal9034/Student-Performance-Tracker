@@ -19,3 +19,10 @@ __pycache__/
 
 .DS_Store
 Thumbs.db
+
+# Secrets & Database local files
+.env
+*.db
+*.sqlite3
+static/profile_pics/
+
