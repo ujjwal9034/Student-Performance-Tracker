@@ -9,6 +9,8 @@ const brand = {
   subtitle: "Student Performance",
 };
 
+const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || "support@example.com";
+
 const Navbar = () => {
   const { user, logout, updateUser } = useAuth();
   const location = useLocation();
@@ -643,7 +645,7 @@ const Navbar = () => {
                   <span className="text-xl">📧</span>
                 </div>
                 <div className="font-bold text-indigo-300 mb-1">Admin Contact Support</div>
-                <a href="mailto:ujjwalchauhan671@gmail.com" className="text-indigo-400 font-semibold text-sm hover:underline hover:text-indigo-300 transition-colors">ujjwalchauhan671@gmail.com</a>
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="text-indigo-400 font-semibold text-sm hover:underline hover:text-indigo-300 transition-colors">{SUPPORT_EMAIL}</a>
               </div>
             </div>
           </div>

@@ -123,10 +123,6 @@ Follow these steps to run both the backend and frontend servers locally on your 
 2.  Deploy the `frontend` folder.
 3.  Set the environment variable `VITE_API_URL` to your production backend URL (e.g., `https://your-backend.onrender.com`).
 
----
-
 ## 📝 Credentials for Testing
 
-*   **Super Admin:**
-    *   **Email:** `ujjwalchauhan671@gmail.com`
-    *   **Password:** `984321`
+*   **Super Admin:** Use the admin email and password configured in your local `.env` file (defaults to `admin@example.com` and `admin123` if not set).

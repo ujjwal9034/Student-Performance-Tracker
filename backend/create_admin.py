@@ -3,15 +3,17 @@ Run this ONCE to seed the default admin account.
 Usage:  python create_admin.py
 """
 import sys, os
+from dotenv import load_dotenv
+load_dotenv(override=True)
 sys.path.insert(0, os.path.dirname(__file__))
 
 import models, database, auth
 
 db = next(database.get_db())
 
-EMAIL    = "ujjwalchauhan671@gmail.com"
-PASSWORD = "984321"
-NAME     = "Ujjwal Chauhan"
+EMAIL    = os.getenv("SUPER_ADMIN_EMAIL", "admin@example.com")
+PASSWORD = os.getenv("SUPER_ADMIN_PASSWORD", "admin123")
+NAME     = os.getenv("SUPER_ADMIN_NAME", "Admin User")
 
 existing = db.query(models.User).filter(models.User.email == EMAIL).first()
 if existing:
