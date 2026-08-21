@@ -48,11 +48,11 @@ def seed_database():
     # 2. Seed Teachers
     print("[INFO] Seeding Teachers...")
     teachers_data = [
-        {"name": "Dr. Alan Turing", "email": "turing@university.edu", "password": "password123", "bio": "Professor of Computing and Algorithms. Passionate about machine intelligence."},
-        {"name": "Prof. Grace Hopper", "email": "hopper@university.edu", "password": "password123", "bio": "Compiler design specialist and pioneer in programming languages."},
-        {"name": "Dr. Richard Feynman", "email": "feynman@university.edu", "password": "password123", "bio": "Quantum computing theorist and Physics department head."},
-        {"name": "Prof. Claude Shannon", "email": "shannon@university.edu", "password": "password123", "bio": "Information theory specialist and communication systems researcher."},
-        {"name": "Dr. Ada Lovelace", "email": "lovelace@university.edu", "password": "password123", "bio": "Pioneer in analytical engine algorithms and computing history."}
+        {"name": "Dr. Vikram Sarabhai", "email": "sarabhai@university.edu", "password": "password123", "bio": "Professor of Computing and Algorithms. Passionate about machine intelligence."},
+        {"name": "Prof. C.V. Raman", "email": "raman@university.edu", "password": "password123", "bio": "Compiler design specialist and pioneer in programming languages."},
+        {"name": "Dr. Homi Bhabha", "email": "bhabha@university.edu", "password": "password123", "bio": "Quantum computing theorist and Physics department head."},
+        {"name": "Prof. Jagadish Chandra Bose", "email": "jcbose@university.edu", "password": "password123", "bio": "Information theory specialist and communication systems researcher."},
+        {"name": "Dr. APJ Abdul Kalam", "email": "kalam@university.edu", "password": "password123", "bio": "Pioneer in analytical engine algorithms and computing history."}
     ]
 
     teacher_users = []
@@ -109,22 +109,22 @@ def seed_database():
     print("[INFO] Seeding 100 Students...")
     first_names = [
         "Aarav", "Aditya", "Akash", "Ananya", "Arjun", "Dev", "Diya", "Ishaan", "Kabir", "Meera",
-        "Neha", "Pranav", "Rohan", "Siddharth", "Tanisha", "Vihaan", "Zara", "Liam", "Olivia", "Noah",
-        "Emma", "Oliver", "Ava", "Elijah", "Charlotte", "William", "Sophia", "James", "Amelia", "Benjamin",
-        "Isabella", "Lucas", "Mia", "Henry", "Evelyn", "Alexander", "Harper", "Mason", "Camila", "Michael",
-        "Gianna", "Ethan", "Abigail", "Daniel", "Luna", "Jacob", "Ella", "Logan", "Elizabeth", "Jackson",
-        "Sofia", "Levi", "Emily", "Sebastian", "Avery", "Mateo", "Mila", "Jack", "Scarlett", "Owen",
-        "Eleanor", "Theodore", "Madison", "Aiden", "Layla", "Samuel", "Penelope", "Joseph", "Aria", "John",
-        "Chloe", "David", "Grace", "Wyatt", "Ellie", "Carter", "Nora", "Julian", "Hazel", "Luke",
-        "Zoey", "Grayson", "Riley", "Isaac", "Janis", "Jayden", "Athena", "Dylan", "Lily", "Grayson",
-        "Aria", "Andrew", "Nova", "Joshua", "Isla", "Nathan", "Zoe", "Caleb", "Leah", "Christian"
+        "Neha", "Pranav", "Rohan", "Siddharth", "Tanisha", "Vihaan", "Aarushi", "Amit", "Rahul", "Priya",
+        "Sunita", "Rajesh", "Vikram", "Suresh", "Ramesh", "Deepak", "Sanjay", "Anil", "Sunil", "Alok",
+        "Vivek", "Karan", "Kunal", "Riya", "Kriti", "Shreya", "Aditi", "Pooja", "Kiran", "Divya",
+        "Harish", "Gopal", "Madhav", "Krishna", "Radha", "Sita", "Gita", "Lata", "Asha", "Usha",
+        "Abhishek", "Abhinav", "Aditi", "Aishwarya", "Ajay", "Alok", "Anjali", "Ankit", "Ankita", "Anshul",
+        "Archana", "Arpit", "Ashi", "Ashish", "Avinash", "Ayush", "Bhupendra", "Deepa", "Deepika", "Dinesh",
+        "Gaurav", "Himanshu", "Jatin", "Jyoti", "Kailash", "Ketan", "Lokesh", "Manish", "Manisha", "Manoj",
+        "Mayank", "Nikhil", "Nisha", "Nitin", "Pankaj", "Pradeep", "Preeti", "Rajeev", "Rashmi", "Ravi",
+        "Sandeep", "Sapna", "Seema", "Shalini", "Sheetal", "Shikha", "Shivani", "Tarun", "Vijay", "Yash"
     ]
     last_names = [
         "Sharma", "Verma", "Gupta", "Patel", "Mehta", "Singh", "Joshi", "Chawla", "Rao", "Nair",
-        "Chauhan", "Sen", "Das", "Roy", "Bose", "Dutta", "Iyer", "Smith", "Johnson", "Williams",
-        "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez",
-        "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson",
-        "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson", "Walker", "Young", "Allen"
+        "Chauhan", "Sen", "Das", "Roy", "Bose", "Dutta", "Iyer", "Trivedi", "Mishra", "Pandey",
+        "Chatterjee", "Mukherjee", "Banerjee", "Kulkarni", "Deshmukh", "Patil", "Reddy", "Pillai",
+        "Choudhury", "Dasgupta", "Saxena", "Srivastava", "Dwivedi", "Tripathi", "Pathak", "Dubey",
+        "Yadav", "Kumar", "Prasad", "Ranjan", "Sinha", "Choudhary", "Grover", "Kapoor", "Khanna", "Malhotra"
     ]
 
     student_users = []
@@ -134,7 +134,7 @@ def seed_database():
         fname = first_names[i % len(first_names)]
         lname = last_names[random.randint(0, len(last_names)-1)]
         name = f"{fname} {lname}"
-        email = f"student.{fname.lower()}.{lname.lower()}{random.randint(10,99)}@university.edu"
+        email = f"{fname.lower()}.{lname.lower()}{random.randint(10,99)}@university.edu"
         semester = semesters[i % len(semesters)]
 
         user = models.User(
