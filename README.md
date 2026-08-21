@@ -198,7 +198,7 @@ Student_Performance_Tracker/
 ## ☁️ Deployment Guide
 
 ### 📦 Backend on Render (One-Click Deploy)
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ujjwal9034/Student_Performance_Tracker)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ujjwal9034/Student-Performance-Tracker)
 
 1. Connect your GitHub repository to Render.
 2. Select **Web Service** with runtime `Python`.
@@ -228,7 +228,7 @@ Student_Performance_Tracker/
 
 **Ujjwal Pratap Singh**
 *   **GitHub:** [@ujjwal9034](https://github.com/ujjwal9034)
-*   **Project Repository:** [Student_Performance_Tracker](https://github.com/ujjwal9034/Student_Performance_Tracker)
+*   **Project Repository:** [Student-Performance-Tracker](https://github.com/ujjwal9034/Student-Performance-Tracker)
 
 ---
 
