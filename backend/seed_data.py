@@ -116,7 +116,7 @@ def seed_database():
         "Abhishek", "Abhinav", "Aditi", "Aishwarya", "Ajay", "Alok", "Anjali", "Ankit", "Ankita", "Anshul",
         "Archana", "Arpit", "Ashi", "Ashish", "Avinash", "Ayush", "Bhupendra", "Deepa", "Deepika", "Dinesh",
         "Gaurav", "Himanshu", "Jatin", "Jyoti", "Kailash", "Ketan", "Lokesh", "Manish", "Manisha", "Manoj",
-        "Mayank", "Nikhil", "Nisha", "Nitin", "Pankaj", "Pradeep", "Preeti", "Rajeev", "Rashmi", "Ravi",
+        "Mayank", "Navin", "Nisha", "Nitin", "Pankaj", "Pradeep", "Preeti", "Rajeev", "Rashmi", "Ravi",
         "Sandeep", "Sapna", "Seema", "Shalini", "Sheetal", "Shikha", "Shivani", "Tarun", "Vijay", "Yash"
     ]
     last_names = [
