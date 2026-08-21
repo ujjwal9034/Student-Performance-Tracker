@@ -13,6 +13,29 @@ from fastapi.staticfiles import StaticFiles
 # Ensure tables are created first
 models.Base.metadata.create_all(bind=database.engine)
 
+# Seed default admin if not exists
+try:
+    import auth
+    db_session = next(database.get_db())
+    EMAIL = os.getenv("SUPER_ADMIN_EMAIL", "ujjwalchauhan671@gmail.com")
+    PASSWORD = os.getenv("SUPER_ADMIN_PASSWORD", "admin123")
+    NAME = os.getenv("SUPER_ADMIN_NAME", "Ujjwal Chauhan")
+    existing_admin = db_session.query(models.User).filter(models.User.email == EMAIL).first()
+    if not existing_admin:
+        admin_user = models.User(
+            name=NAME,
+            email=EMAIL,
+            password=auth.hash_password(PASSWORD),
+            role="admin",
+        )
+        db_session.add(admin_user)
+        db_session.commit()
+        print(f"[OK] Seeded admin account: {EMAIL}")
+    else:
+        print(f"[INFO] Admin account already exists: {EMAIL}")
+except Exception as e:
+    print(f"[ERROR] Failed to seed admin user: {e}")
+
 # Dynamic DB migration to add new bio & profile_pic columns to sqlite db if they do not exist
 try:
     with database.engine.begin() as conn:
