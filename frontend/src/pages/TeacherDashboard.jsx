@@ -1195,7 +1195,7 @@ const TeacherDashboard = () => {
           <div>
             <h2 className="text-xl font-bold mb-4">Attendance Management</h2>
             {/* Record Attendance */}
-            <div className="p-4 rounded mb-6 bg-gray-50 border border-gray-250/20 dark:bg-slate-900/50 dark:border-slate-800">
+            <div className="p-4 rounded mb-6 bg-gray-50 border border-gray-200">
               <h3 className="font-semibold mb-2">Mark Attendance</h3>
               <p className="text-sm text-gray-600 mb-2">
                 Select a course and date, then mark each student as present or absent.
@@ -1318,7 +1318,7 @@ const TeacherDashboard = () => {
             </div>
 
             {/* Smart QR Attendance Panel */}
-            <div className="p-5 rounded-xl mb-6 shadow-sm border border-gray-250/20 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50">
+            <div className="p-5 rounded-xl mb-6 shadow-sm border border-gray-200 bg-gray-50">
               <style>{`
                 @keyframes scan-glow {
                   0%, 100% { top: 0%; opacity: 0.8; }
@@ -1528,7 +1528,7 @@ const TeacherDashboard = () => {
             </div>
 
             {/* Course Summary */}
-            <div className="p-4 rounded mb-6 bg-gray-50 border border-gray-250/20 dark:bg-slate-900/50 dark:border-slate-800">
+            <div className="p-4 rounded mb-6 bg-gray-50 border border-gray-200">
               <h3 className="font-semibold mb-2">📘 Course-wise Attendance Summary</h3>
 
               <div className="flex gap-3 mb-3">
@@ -1607,7 +1607,7 @@ const TeacherDashboard = () => {
             </div>
 
             {/* Overall Summary */}
-            <div className="p-4 rounded bg-gray-50 border border-gray-250/20 dark:bg-slate-900/50 dark:border-slate-800">
+            <div className="p-4 rounded bg-gray-50 border border-gray-200">
               <h3 className="font-semibold mb-2">📊 Overall Attendance (All Courses)</h3>
 
               <div className="flex items-center gap-2 mb-3">
@@ -1711,7 +1711,7 @@ const TeacherDashboard = () => {
         {activeTab === "courses" && (
           <div>
             {/* Create Course */}
-            <div className="mb-6  p-4 rounded bg-gray-50 border border-gray-250/20 dark:bg-slate-900/50 dark:border-slate-800">
+            <div className="mb-6  p-4 rounded bg-gray-50 border border-gray-200">
               <h3 className="font-semibold mb-2">Create Course</h3>
               <form onSubmit={handleCreateCourse} className="flex gap-2 items-center">
                 <input
@@ -1737,7 +1737,7 @@ const TeacherDashboard = () => {
             </div>
 
             {/* Course List */}
-            <div className="p-4 rounded mb-6 bg-gray-50 border border-gray-250/20 dark:bg-slate-900/50 dark:border-slate-800">
+            <div className="p-4 rounded mb-6 bg-gray-50 border border-gray-200">
               <h3 className="font-semibold mb-2">Your Courses</h3>
               {courses.length > 0 ? (
                 <table className="w-full border-collapse">
@@ -1798,7 +1798,7 @@ const TeacherDashboard = () => {
             </div>
 
             {/* Enroll Students */}
-            <div className="mb-6  p-4 rounded bg-gray-50 border border-gray-250/20 dark:bg-slate-900/50 dark:border-slate-800">
+            <div className="mb-6  p-4 rounded bg-gray-50 border border-gray-200">
               <h3 className="font-semibold mb-2">Enroll Students</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
@@ -1813,7 +1813,7 @@ const TeacherDashboard = () => {
                         setFilterSemester(String(course.semester));
                       }
                     }}
-                    className="border p-2 rounded w-full bg-gray-50 dark:bg-slate-850 border-gray-250/20 dark:border-slate-700 text-slate-900 dark:text-white"
+                    className="border p-2 rounded w-full bg-gray-50 border-gray-200"
                   >
                     <option value="">-- Select Course --</option>
                     {courses.map((c) => (
@@ -1916,7 +1916,7 @@ const TeacherDashboard = () => {
                     setMarksSemester(String(course.semester));
                   }
                 }}
-                className=" p-2 rounded bg-gray-50 dark:bg-slate-850 border border-gray-250/20 dark:border-slate-700 text-slate-900 dark:text-white"
+                className=" p-2 rounded bg-gray-50 border border-gray-200"
               >
                 <option value="">-- Choose Course --</option>
                 {courses.map((c) => (
@@ -1936,7 +1936,7 @@ const TeacherDashboard = () => {
                   min={1}
                   value={marksSemester}
                   onChange={(e) => setMarksSemester(e.target.value)}
-                  className=" p-2 rounded w-28 bg-gray-50 dark:bg-slate-850 border border-gray-250/20 dark:border-slate-700 text-slate-900 dark:text-white"
+                  className=" p-2 rounded w-28 bg-gray-50 border border-gray-200"
                 />
               </div>
               <div>
@@ -1944,7 +1944,7 @@ const TeacherDashboard = () => {
                 <select
                   value={marksExamType}
                   onChange={(e) => setMarksExamType(e.target.value)}
-                  className=" p-2 rounded bg-gray-50 dark:bg-slate-850 border border-gray-250/20 dark:border-slate-700 text-slate-900 dark:text-white"
+                  className=" p-2 rounded bg-gray-50 border border-gray-200"
                 >
                   <option value="mid">Mid Term</option>
                   <option value="end">End Term</option>
@@ -2045,7 +2045,7 @@ const TeacherDashboard = () => {
             <div className="mb-6  p-4 rounded">
               <h3 className="font-semibold mb-2" >Get Student Records</h3>
 
-              <div className=" rounded p-3 bg-gray-50 border border-gray-250/20 dark:bg-slate-900/50 dark:border-slate-800">
+              <div className=" rounded p-3 bg-gray-50 border border-gray-200">
                 <div className="flex flex-wrap gap-2 items-end mb-3">
                   <div>
                     <label className="mr-2">Course:</label>
@@ -2120,7 +2120,7 @@ const TeacherDashboard = () => {
         {/* Issues Tab */}
         {activeTab === "issues" && (
           <div>
-            <div className="p-4 rounded bg-gray-50 border border-gray-250/20 dark:bg-slate-900/50 dark:border-slate-800">
+            <div className="p-4 rounded bg-gray-50 border border-gray-200">
               <h3 className="font-semibold mb-2">Student Raised Issues</h3>
               
               <div className="mb-4">

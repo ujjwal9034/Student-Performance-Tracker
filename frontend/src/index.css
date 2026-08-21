@@ -685,7 +685,7 @@ body {
   background-color: rgba(255, 255, 255, 0.05) !important;
 }
 .dark .bg-gray-100 {
-  background-color: rgba(255, 255, 255, 0.05) !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
 }
 .dark .bg-gray-200 {
   background-color: rgba(255, 255, 255, 0.1) !important;
@@ -695,11 +695,45 @@ body {
   color: #ffffff !important;
 }
 
+/* Card borders */
+.dark .border-gray-200,
+.dark .border-gray-150,
+.dark .border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Table header backgrounds */
+.dark thead.bg-gray-100 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Hover rows */
+.dark .hover\:bg-gray-50:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+.dark .hover\:bg-gray-100:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Table borders + cells */
+.dark td.border,
+.dark th.border {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
 .dark select,
 .dark input {
+  background-color: rgba(255, 255, 255, 0.08) !important;
   color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
 }
 .dark select option {
   background-color: #0f172a !important;
   color: #ffffff !important;
+}
+
+/* Semester filter buttons in dark mode */
+.dark .bg-white.text-blue-700 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #93c5fd !important;
 }
