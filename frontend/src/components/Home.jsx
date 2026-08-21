@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const Home = () => {
   // Theme awareness
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   useEffect(() => {
     const observer = new MutationObserver(() => {
       const isLight = document.documentElement.classList.contains("light");

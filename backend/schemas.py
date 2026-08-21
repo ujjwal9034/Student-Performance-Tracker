@@ -147,11 +147,14 @@ class QRSessionResponse(BaseModel):
     id: int
     course_id: int
     session_token: str
+    signing_secret: str
     expires_at: datetime
     is_active: bool
 
 class QRClaimPayload(BaseModel):
     session_token: str
+    ts: int
+    sig: str
 
 class StudyRecommendation(BaseModel):
     course_name: str

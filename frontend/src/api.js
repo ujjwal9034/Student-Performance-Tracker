@@ -246,8 +246,8 @@ export const apiStudent = {
     });
   },
   getSmartInsights: (studentId) => request(`/student/${studentId}/smart-insights`),
-  claimQRAttendance: (studentId, token) =>
-    request(`/student/${studentId}/qr-attendance/claim`, { method: "POST", body: { session_token: token } })
+  claimQRAttendance: (studentId, token, ts, sig) =>
+    request(`/student/${studentId}/qr-attendance/claim`, { method: "POST", body: { session_token: token, ts, sig } })
 };
 
 export default {

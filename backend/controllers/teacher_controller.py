@@ -488,16 +488,18 @@ def get_at_risk_students(teacher_id: int, semester: int, db: Session):
     return at_risk
 
 
-import uuid
+import uuid, secrets
 from datetime import datetime, timedelta, date
 
 def create_qr_session(course_id: int, duration_minutes: int, db: Session):
     token = uuid.uuid4().hex
+    secret = secrets.token_hex(32)  # 64-char hex signing secret
     expires_at = datetime.now() + timedelta(minutes=duration_minutes)
     
     session = models.QRSession(
         course_id=course_id,
         session_token=token,
+        signing_secret=secret,
         date=date.today(),
         expires_at=expires_at,
         is_active=True

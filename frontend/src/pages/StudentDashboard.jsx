@@ -776,12 +776,32 @@ const StudentDashboard = () => {
 
   // Submit Claim QR Attendance Route
   const handleClaimQR = async (tokenValue) => {
-    const claimToken = typeof tokenValue === "string" ? tokenValue : qrToken;
-    if (!claimToken || !claimToken.trim()) return;
+    const rawValue = typeof tokenValue === "string" ? tokenValue : qrToken;
+    if (!rawValue || !rawValue.trim()) return;
     setQrMsg("");
     setQrSuccess(false);
+    
+    // Parse rotating QR payload: {"token":"...","ts":...,"sig":"..."}
+    let claimToken, claimTs, claimSig;
     try {
-      const res = await apiStudent.claimQRAttendance(user.id, claimToken.trim());
+      const parsed = JSON.parse(rawValue.trim());
+      claimToken = parsed.token;
+      claimTs = parsed.ts;
+      claimSig = parsed.sig;
+      if (!claimToken || !claimTs || !claimSig) {
+        throw new Error("Missing fields");
+      }
+    } catch {
+      // Not a rotating QR payload — show error
+      setQrSuccess(false);
+      setQrMsg(lang === "en" 
+        ? "❌ Invalid QR code format. Please scan the current QR code displayed by your teacher." 
+        : "❌ अमान्य क्यूआर कोड प्रारूप। कृपया शिक्षक द्वारा प्रदर्शित वर्तमान क्यूआर कोड स्कैन करें।");
+      return;
+    }
+
+    try {
+      const res = await apiStudent.claimQRAttendance(user.id, claimToken, claimTs, claimSig);
       setQrSuccess(true);
       setQrMsg(res.message || (lang === "en" ? "Attendance marked successfully!" : "उपस्थिति सफलतापूर्वक दर्ज की गई!"));
       

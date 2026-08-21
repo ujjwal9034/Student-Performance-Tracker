@@ -688,6 +688,7 @@ def create_qr_session(payload: schemas.QRSessionCreate, db: Session = Depends(da
         "id": session.id,
         "course_id": session.course_id,
         "session_token": session.session_token,
+        "signing_secret": session.signing_secret,
         "expires_at": session.expires_at.isoformat(),
         "is_active": session.is_active
     }

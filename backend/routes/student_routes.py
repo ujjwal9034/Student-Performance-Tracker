@@ -269,5 +269,5 @@ def get_smart_insights(student_id: int, db: Session = Depends(database.get_db)):
 
 @router.post("/{student_id}/qr-attendance/claim")
 def claim_qr_attendance(student_id: int, payload: schemas.QRClaimPayload, db: Session = Depends(database.get_db)):
-    return student_controller.claim_qr_attendance(student_id, payload.session_token, db)
+    return student_controller.claim_qr_attendance(student_id, payload.session_token, payload.ts, payload.sig, db)
 

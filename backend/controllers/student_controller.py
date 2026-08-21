@@ -251,8 +251,9 @@ def get_attendance_heatmap(student_id: int, db: Session):
 
 from datetime import datetime
 from fastapi import HTTPException
+import hmac, hashlib, time
 
-def claim_qr_attendance(student_id: int, token: str, db: Session):
+def claim_qr_attendance(student_id: int, token: str, ts: int, sig: str, db: Session):
     session = db.query(models.QRSession).filter(models.QRSession.session_token == token).first()
     if not session:
         raise HTTPException(status_code=400, detail="Invalid QR attendance code.")
@@ -264,7 +265,23 @@ def claim_qr_attendance(student_id: int, token: str, db: Session):
         session.is_active = False
         db.commit()
         raise HTTPException(status_code=400, detail="This QR code has expired.")
-        
+
+    # Validate timestamp freshness (6-second window = 2 rotation cycles)
+    current_time = int(time.time())
+    if abs(current_time - ts) > 6:
+        raise HTTPException(status_code=400, detail="QR code has expired. Please scan the current QR code displayed on screen.")
+
+    # Validate HMAC signature
+    ts_window = ts // 3  # 3-second rotation window
+    expected_sig = hmac.new(
+        session.signing_secret.encode(),
+        str(ts_window).encode(),
+        hashlib.sha256
+    ).hexdigest()[:16]
+    
+    if not hmac.compare_digest(sig, expected_sig):
+        raise HTTPException(status_code=400, detail="Invalid QR code signature. Please scan the current QR code on screen.")
+
     # Check if attendance already recorded
     existing = db.query(models.Attendance).filter(
         models.Attendance.student_id == student_id,

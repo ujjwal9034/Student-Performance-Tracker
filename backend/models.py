@@ -192,9 +192,11 @@ class QRSession(Base):
     id = Column(Integer, primary_key=True, index=True)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
     session_token = Column(String(100), unique=True, index=True, nullable=False)
+    signing_secret = Column(String(64), nullable=False)
     date = Column(Date, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
 
     course = relationship("Course")
+
 

@@ -18,7 +18,7 @@ const Register = () => {
   const [success, setSuccess] = useState(false);
 
   // Theme awareness
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   useEffect(() => {
     const observer = new MutationObserver(() => {
       const isLight = document.documentElement.classList.contains("light");

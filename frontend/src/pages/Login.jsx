@@ -14,9 +14,9 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   // Theme awareness
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   useEffect(() => {
-    const onThemeChange = () => setTheme(localStorage.getItem("theme") || "dark");
+    const onThemeChange = () => setTheme(localStorage.getItem("theme") || "light");
     // Listen for class changes on <html>
     const observer = new MutationObserver(() => {
       const isLight = document.documentElement.classList.contains("light");

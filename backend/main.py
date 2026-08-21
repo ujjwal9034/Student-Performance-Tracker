@@ -36,18 +36,26 @@ try:
 except Exception as e:
     print(f"[ERROR] Failed to seed admin user: {e}")
 
+from sqlalchemy import text
+
 # Dynamic DB migration to add new bio & profile_pic columns to sqlite db if they do not exist
 try:
     with database.engine.begin() as conn:
         # SQLite needs manual ALTER statements since Base.metadata.create_all won't add columns to existing tables
-        conn.execute("ALTER TABLE users ADD COLUMN bio TEXT")
+        conn.execute(text("ALTER TABLE users ADD COLUMN bio TEXT"))
 except Exception:
     # Ignore if column already exists
     pass
 
 try:
     with database.engine.begin() as conn:
-        conn.execute("ALTER TABLE users ADD COLUMN profile_pic VARCHAR(255)")
+        conn.execute(text("ALTER TABLE users ADD COLUMN profile_pic VARCHAR(255)"))
+except Exception:
+    pass
+
+try:
+    with database.engine.begin() as conn:
+        conn.execute(text("ALTER TABLE qr_sessions ADD COLUMN signing_secret VARCHAR(64) DEFAULT ''"))
 except Exception:
     pass
 

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiTeacher, apiAdmin, BASE_URL } from "../api";
 import DashboardLayout from "../DashboardLayout";
+import QRCode from "qrcode";
 
 const t = {
   en: {
@@ -219,6 +220,8 @@ const TeacherDashboard = () => {
   const [qrSecondsRemaining, setQrSecondsRemaining] = useState(0);
   const [qrMessage, setQrMessage] = useState("");
   const [qrSuccess, setQrSuccess] = useState(false);
+  const qrCanvasRef = useRef(null);
+  const [qrRotationCount, setQrRotationCount] = useState(0);
 
   // Helper to parse naive ISO string as local date/time safely
   const parseLocalISOString = (str) => {
@@ -236,10 +239,42 @@ const TeacherDashboard = () => {
     return new Date(str);
   };
 
-  // QR session countdown timer and polling for scans
+  // HMAC-SHA256 helper for rotating QR signatures (Web Crypto API)
+  const computeHMAC = async (secret, message) => {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const msgData = encoder.encode(message);
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+    );
+    const signature = await crypto.subtle.sign("HMAC", cryptoKey, msgData);
+    const hashArray = Array.from(new Uint8Array(signature));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
+  };
+
+  // Render QR code on canvas with current rotating payload
+  const renderQRCode = async (session) => {
+    if (!qrCanvasRef.current || !session) return;
+    const ts = Math.floor(Date.now() / 1000);
+    const tsWindow = Math.floor(ts / 3);
+    const sig = await computeHMAC(session.signing_secret, String(tsWindow));
+    const payload = JSON.stringify({ token: session.session_token, ts, sig });
+    try {
+      await QRCode.toCanvas(qrCanvasRef.current, payload, {
+        width: 220,
+        margin: 2,
+        color: { dark: "#1a1a2e", light: "#ffffff" }
+      });
+    } catch (err) {
+      console.error("QR render error:", err);
+    }
+  };
+
+  // QR session countdown timer, polling for scans, and 3-second QR rotation
   useEffect(() => {
     let timerInterval = null;
     let pollInterval = null;
+    let qrRotateInterval = null;
 
     if (activeQRSession && activeQRSession.expires_at) {
       const calculateSecondsRemaining = () => {
@@ -250,6 +285,15 @@ const TeacherDashboard = () => {
 
       setQrSecondsRemaining(calculateSecondsRemaining());
 
+      // Initial QR render
+      setTimeout(() => renderQRCode(activeQRSession), 100);
+
+      // Rotate QR every 3 seconds
+      qrRotateInterval = setInterval(() => {
+        renderQRCode(activeQRSession);
+        setQrRotationCount(c => c + 1);
+      }, 3000);
+
       timerInterval = setInterval(() => {
         const remaining = calculateSecondsRemaining();
         setQrSecondsRemaining(remaining);
@@ -259,6 +303,7 @@ const TeacherDashboard = () => {
           setQrSuccess(false);
           clearInterval(timerInterval);
           clearInterval(pollInterval);
+          clearInterval(qrRotateInterval);
         }
       }, 1000);
 
@@ -278,6 +323,7 @@ const TeacherDashboard = () => {
     return () => {
       if (timerInterval) clearInterval(timerInterval);
       if (pollInterval) clearInterval(pollInterval);
+      if (qrRotateInterval) clearInterval(qrRotateInterval);
     };
   }, [activeQRSession, lang]);
 
@@ -1420,34 +1466,30 @@ const TeacherDashboard = () => {
                     <div className="absolute inset-x-0 w-full h-0.5 bg-red-500 laser-line shadow-[0_0_8px_rgba(239,68,68,0.8)] z-10"></div>
                     
                     <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 mb-3 relative">
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?data=${activeQRSession.session_token}&size=250x250`}
-                        alt="Attendance QR Code"
-                        className="w-48 h-48 block"
+                      <canvas
+                        ref={qrCanvasRef}
+                        className="block"
+                        style={{ width: 192, height: 192 }}
                       />
+                    </div>
+
+                    {/* Rotation indicator */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                      </span>
+                      <span className="text-[10px] font-bold text-green-600 uppercase tracking-wider">
+                        {lang === "en" ? "QR rotates every 3s — screenshots won't work!" : "क्यूआर हर 3 सेकंड में बदलता है — स्क्रीनशॉट काम नहीं करेगा!"}
+                      </span>
                     </div>
 
                     <div className="w-full text-center space-y-1.5">
                       <div className="text-xs font-bold text-gray-550 uppercase tracking-wider">
-                        {lang === "en" ? "Session Token" : "सत्र टोकन"}
+                        {lang === "en" ? "Secure Session" : "सुरक्षित सत्र"}
                       </div>
-                      <div className="flex items-center justify-center gap-1.5">
-                        <code className="px-2 py-1 bg-gray-100 rounded text-xs font-mono font-bold text-gray-800 break-all select-all">
-                          {activeQRSession.session_token}
-                        </code>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(activeQRSession.session_token);
-                            const prevMsg = qrMessage;
-                            setQrMessage(lang === "en" ? "Token copied to clipboard!" : "टोकन क्लिपबोर्ड पर कॉपी किया गया!");
-                            setQrSuccess(true);
-                            setTimeout(() => setQrMessage(prevMsg), 2500);
-                          }}
-                          className="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-[10px] font-bold rounded text-gray-600 active:scale-95 transition-all"
-                        >
-                          {lang === "en" ? "Copy" : "कॉपी"}
-                        </button>
+                      <div className="text-[10px] text-gray-400">
+                        {lang === "en" ? `Rotation #${qrRotationCount}` : `रोटेशन #${qrRotationCount}`}
                       </div>
                     </div>
                   </div>

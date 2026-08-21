@@ -23,7 +23,7 @@ const Navbar = () => {
   const [showSupport, setShowSupport] = useState(false);
 
   // Theme support
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
 
   useEffect(() => {
     if (theme === "light") {
